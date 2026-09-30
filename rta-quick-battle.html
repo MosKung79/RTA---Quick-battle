@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>R-T-A Quick Battle</title>
+<style>
+:root{--bg:#f4f1ff;--card:#fff;--tx:#231f3d;--mu:#6b6788;--pr:#6d4aff;--ok:#16a34a;--no:#dc2626;--bd:#ddd6fe;--hp:#ef4444;--ac:#fff3c4;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15132a;--card:#1f1c3a;--tx:#f1eeff;--mu:#a29fc4;--bd:#3a3566;--ac:#3b3410}}
+:root[data-theme="dark"]{--bg:#15132a;--card:#1f1c3a;--tx:#f1eeff;--mu:#a29fc4;--bd:#3a3566;--ac:#3b3410}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Noto Sans Thai","Sarabun",system-ui,sans-serif;line-height:1.5}
+#app{max-width:820px;margin:0 auto;padding:14px}
+h1{margin:0;font-size:1.4rem}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.clock{font-weight:700;font-size:1.2rem;background:var(--card);border:2px solid var(--bd);border-radius:12px;padding:4px 12px}
+.pls{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pl{background:var(--card);border:2px solid var(--bd);border-radius:16px;padding:10px;font-size:.9rem}
+.pl.act{border-color:var(--pr);background:var(--ac)}
+.pl h3{margin:0 0 4px;font-size:1rem}
+.hpbar{height:12px;background:var(--bd);border-radius:8px;overflow:hidden;margin:4px 0}
+.hpbar i{display:block;height:100%;background:var(--hp);transition:width .4s}
+.hand{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;min-height:30px}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:10px 16px;background:var(--pr);color:#fff;font-weight:600}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.sp{background:var(--card);color:var(--tx);border:2px solid var(--pr);padding:4px 8px;font-size:.8rem}
+button.ok{background:var(--ok)}button.no{background:var(--no)}button.gh{background:var(--card);color:var(--tx);border:2px solid var(--bd)}
+.stage{background:var(--card);border:2px solid var(--bd);border-radius:20px;padding:18px;margin:12px 0;text-align:center}
+.word{font-size:2.8rem;font-weight:800;color:var(--pr);margin:6px 0;word-break:break-word}
+.th{font-size:1.8rem;font-weight:700;min-height:2.4rem}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.tb{height:10px;background:var(--bd);border-radius:8px;overflow:hidden;margin:8px auto;max-width:360px}
+.tb i{display:block;height:100%;background:var(--pr);transition:width 1s linear}
+.big{font-size:1.5rem;font-weight:800;margin:4px 0}
+.mu{color:var(--mu);font-size:.85rem}
+.log{background:var(--card);border:2px solid var(--bd);border-radius:14px;padding:10px 14px;font-size:.85rem;color:var(--mu)}
+.log div{padding:1px 0}
+select,select{font:inherit;padding:8px 10px;border:2px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);width:100%}
+input{font:inherit;padding:8px 10px;border:2px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);width:100%}
+.rules{text-align:left;font-size:.9rem;margin:10px auto;max-width:460px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const V=[["apple","แอปเปิล"],["book","หนังสือ"],["cat","แมว"],["dog","สุนัข"],["egg","ไข่"],["fish","ปลา"],["girl","เด็กผู้หญิง"],["hat","หมวก"],["ice","น้ำแข็ง"],["juice","น้ำผลไม้"],["king","กษัตริย์"],["lion","สิงโต"],["milk","นม"],["nose","จมูก"],["orange","ส้ม"],["pen","ปากกา"],["queen","ราชินี"],["rain","ฝน"],["sun","ดวงอาทิตย์"],["tree","ต้นไม้"],["umbrella","ร่ม"],["van","รถตู้"],["water","น้ำ"],["yellow","สีเหลือง"],["zebra","ม้าลาย"],["bird","นก"],["chair","เก้าอี้"],["door","ประตู"],["eye","ตา"],["flower","ดอกไม้"],["green","สีเขียว"],["house","บ้าน"],["teacher","ครู"],["school","โรงเรียน"],["mother","แม่"],["father","พ่อ"],["happy","มีความสุข"],["big","ใหญ่"],["small","เล็ก"],["red","สีแดง"]];
+const AT=[];const add=(n,d,i,c)=>{for(let k=0;k<c;k++)AT.push({n,d,i})};
+add("Attack",2,"⚔️",6);add("Strong Attack",3,"⚔️",4);add("Heavy Attack",4,"💥",3);add("Critical Attack",5,"🔥",2);
+const SPD={shield:["🛡️","Shield","ลดดาเมจครั้งถัดไป 2"],heal:["❤️","Heal","ฟื้น 2 HP"],double:["⚡","Double Attack","โจมตี 2 ครั้ง ครั้งละ 2"],counter:["🔄","Counter","ถูกตี ≥3 สะท้อนกลับ 2"]};
+const SPK=["shield","shield","heal","heal","double","counter"];
+const sh=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const $=id=>document.getElementById(id);
+let MAXHP=25;const GAME=720;
+let G={phase:"intro"},timer=null;
+
+function newGame(n1,n2,hp){
+  MAXHP=hp||25;
+  G={phase:"start",turn:0,left:GAME,tl:10,sd:false,sdr:[null,null],log:[],res:"",rev:false,word:null,bonus:0,win:null,why:"",
+   p:[n1,n2].map(n=>({name:n,hp:MAXHP,combo:0,best:0,shield:false,counter:false,hand:[]})),
+   vd:sh(V),ad:sh(AT),sd_:sh(SPK)};
+  log("เกมเริ่ม! Read → Translate → Attack!");
+  clearInterval(timer);timer=setInterval(tick,1000);render();
+}
+function log(t){G.log.unshift(t);G.log=G.log.slice(0,8)}
+const me=()=>G.p[G.turn], op=()=>G.p[1-G.turn];
+
+function tick(){
+  if(G.phase==="over"||G.phase==="intro")return;
+  if(!G.sd){G.left--;if(G.left<=0){timeUp();return}}
+  if(G.phase==="word"){G.tl--;if(G.tl<=0){log("⏰ หมดเวลา 10 วิ");judge(false);return}}
+  clock();
+}
+function clock(){
+  const g=$("gt");if(g)g.textContent=G.sd?"Sudden Death":"⏱️ "+String(G.left/60|0).padStart(2,"0")+":"+String(G.left%60).padStart(2,"0");
+  const w=$("wt");if(w){w.style.width=Math.max(0,G.tl)*10+"%"}
+  const t=$("wn");if(t)t.textContent=Math.max(0,G.tl)+" วินาที";
+}
+function drawWord(){
+  if(!G.vd.length)G.vd=sh(V);
+  G.word=G.vd.pop();G.tl=10;G.rev=false;G.phase="word";render();
+}
+function speak(){try{const u=new SpeechSynthesisUtterance(G.word[0]);u.lang="en-US";speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+function reveal(){G.rev=true;$("th").textContent=G.word[1];}
+function judge(ok){
+  if(G.phase!=="word")return;
+  const p=me();
+  if(G.sd){
+    G.sdr[G.turn]=ok;log(`${p.name}: ${ok?"✅ ถูก":"❌ ผิด"} (Sudden Death)`);
+    if(G.turn===0){G.turn=1;G.phase="start";render();return}
+    if(G.sdr[0]!==G.sdr[1]){finish(G.sdr[0]?0:1,"ชนะใน Sudden Death");return}
+    log("เสมอ! ทำ Sudden Death ใหม่");G.sdr=[null,null];G.turn=0;G.phase="start";render();return;
+  }
+  if(!ok){p.combo=0;log(`${p.name} ตอบผิด ❌ Combo รีเซ็ต จบเทิร์น`);endTurn();return}
+  p.combo++;p.best=Math.max(p.best,p.combo);
+  G.bonus=p.combo===2?1:p.combo===3?2:0;
+  let extra="";
+  if(p.combo===4){p.combo=0;if(G.sd_.length){const k=G.sd_.pop();p.hand.push(k);extra=` ได้การ์ด ${SPD[k][0]} ${SPD[k][1]}!`}else extra=" (Special Card หมดแล้ว)"}
+  log(`${p.name} ตอบถูก ✅${extra}`);
+  G.phase="attack";render();
+}
+function dmgTo(d){
+  const o=op(),m=me();let raw=d,note="";
+  if(o.shield){d=Math.max(0,d-2);o.shield=false;note+=` 🛡️ลด→${d}`}
+  o.hp=Math.max(0,o.hp-d);
+  if(raw>=3&&o.counter){o.counter=false;m.hp=Math.max(0,m.hp-2);note+=` 🔄 ${o.name} สะท้อนกลับ 2!`}
+  return `${d} ดาเมจ${note}`;
+}
+function attack(){
+  if(!G.ad.length)G.ad=sh(AT);
+  const c=G.ad.pop(),d=1+(Math.random()*6|0),db=d<=2?0:d<=4?1:d===5?2:3;
+  const total=c.d+db+G.bonus;
+  const r=dmgTo(total);
+  G.res=`<div class="big">${c.i} ${c.n} (${c.d})</div><div>🎲 ทอยได้ ${d} → +${db}${G.bonus?` · 🔥 Combo +${G.bonus}`:""}</div><div class="big">รวม ${r}</div>`;
+  log(`${me().name} ใช้ ${c.n} รวม ${r}`);
+  afterHit();
+}
+function doubleAtk(){
+  const a=dmgTo(2+db0()),b=dmgTo(2);
+  G.res=`<div class="big">⚡ Double Attack</div><div>ครั้งที่ 1: ${a}</div><div>ครั้งที่ 2: ${b}</div>`;
+  log(`${me().name} ใช้ Double Attack!`);afterHit();
+}
+function db0(){return G.bonus}
+function afterHit(){
+  G.phase="result";
+  const a=G.p[0].hp,b=G.p[1].hp;
+  if(a<=0||b<=0){
+    if(a<=0&&b<=0)return tieBreak("HP ตกเป็น 0 พร้อมกัน");
+    finish(a<=0?1:0,"HP ของอีกฝ่ายเป็น 0");return;
+  }
+  render();
+}
+function endTurn(){G.turn=1-G.turn;G.phase="start";G.bonus=0;render()}
+function useSp(i){
+  const p=me(),k=p.hand[i];
+  if(!(G.phase==="start"||G.phase==="attack"))return;
+  if(k==="double"){if(G.phase!=="attack")return;p.hand.splice(i,1);doubleAtk();return}
+  p.hand.splice(i,1);
+  if(k==="shield"){p.shield=true;log(`${p.name} ใช้ 🛡️ Shield`)}
+  if(k==="heal"){p.hp=Math.min(MAXHP,p.hp+2);log(`${p.name} ใช้ ❤️ Heal +2`)}
+  if(k==="counter"){p.counter=true;log(`${p.name} ตั้ง 🔄 Counter`)}
+  render();
+}
+function timeUp(){
+  log("⏰ หมดเวลา 12 นาที!");
+  const [a,b]=G.p;
+  if(a.hp!==b.hp)return finish(a.hp>b.hp?0:1,"หมดเวลา — HP มากกว่า");
+  tieBreak("หมดเวลา HP เท่ากัน");
+}
+function tieBreak(why){
+  const [a,b]=G.p;
+  if(a.best!==b.best)return finish(a.best>b.best?0:1,why+" — Combo สูงกว่า");
+  log("เสมอทุกอย่าง → Sudden Death!");
+  G.sd=true;G.sdr=[null,null];G.turn=0;G.phase="start";G.left=0;render();
+}
+function finish(w,why){G.phase="over";G.win=w;G.why=why;clearInterval(timer);render()}
+
+function pl(i){
+  const p=G.p[i],act=G.turn===i&&G.phase!=="over";
+  const hand=p.hand.map((k,j)=>{
+    const ok=act&&(G.phase==="start"||G.phase==="attack")&&!(k==="double"&&G.phase!=="attack");
+    return `<button class="sp" title="${SPD[k][2]}" ${ok?"":"disabled"} onclick="useSp(${j})">${SPD[k][0]} ${SPD[k][1]}</button>`}).join("");
+  return `<div class="pl ${act?"act":""}"><h3>${act?"👉 ":""}${esc(p.name)}</h3>
+  <div class="hpbar"><i style="width:${p.hp/MAXHP*100}%"></i></div><b>❤️ ${p.hp}/${MAXHP}</b> ${p.shield?"🛡️":""}${p.counter?"🔄":""}
+  <div class="mu">🔥 Combo ${p.combo}/4 · สูงสุด ${p.best}</div><div class="hand">${hand||'<span class="mu">ไม่มี Special</span>'}</div></div>`;
+}
+function render(){
+  const A=$("app");
+  if(G.phase==="intro"){
+    A.innerHTML=`<div class="stage"><h1>🎮 R-T-A Quick Battle</h1><div class="big" style="color:var(--pr)">Read → Translate → Attack!</div>
+    <p class="mu">เกมคำศัพท์ภาษาอังกฤษ 1 vs 1 · ต้องมีกรรมการคอยตัดสินคำตอบ</p>
+    <div style="max-width:320px;margin:10px auto;display:grid;gap:8px"><input id="n1" value="ผู้เล่น 1" maxlength="14"><input id="n2" value="ผู้เล่น 2" maxlength="14">
+    <select id="hpx"><option value="15">❤️ 15 HP — เกมสั้น (ป.ต้น / เล่นเร็ว)</option><option value="20">❤️ 20 HP — ปานกลาง</option><option value="25" selected>❤️ 25 HP — แนะนำ (ป.ปลาย)</option><option value="30">❤️ 30 HP — ยาว (ห้องเก่ง)</option></select></div>
+    <div class="rules">⏱️ 12 นาที<br>1️⃣ จั่วคำศัพท์ 2️⃣ อ่าน+แปลใน 10 วิ 3️⃣ ถูก = จั่ว Attack (2–5) + 🎲 โบนัส 4️⃣ ผิด = จบเทิร์น<br>🔥 ถูกติด 2 ครั้ง +1 · 3 ครั้ง +2 · 4 ครั้ง ได้ Special Card<br>⭐ Shield ×2 · Heal ×2 · Double ×1 · Counter ×1</div>
+    <button onclick="newGame($('n1').value.trim()||'ผู้เล่น 1',$('n2').value.trim()||'ผู้เล่น 2',+$('hpx').value)">▶ เริ่มเกม</button></div>`;return;
+  }
+  let st="";
+  const p=me();
+  if(G.phase==="start")st=`<div class="big">ตาของ ${esc(p.name)}</div><div class="mu">${G.sd?"Sudden Death: ตอบคนละ 1 คำ":"STEP 1 — Draw"}</div><div class="row"><button onclick="drawWord()">🃏 จั่ว Vocabulary Card</button></div><div class="mu" style="margin-top:8px">ใช้ Special ได้ก่อนจั่ว (ปุ่มที่การ์ดผู้เล่น)</div>`;
+  if(G.phase==="word")st=`<div class="mu">STEP 2 — ${esc(p.name)} อ่านออกเสียง + แปลไทย</div><div class="word">${esc(G.word[0])}</div>
+    <div class="th" id="th">${G.rev?esc(G.word[1]):""}</div><div class="tb"><i id="wt" style="width:${G.tl*10}%"></i></div><div class="mu" id="wn">${G.tl} วินาที</div>
+    <div class="row"><button class="gh" onclick="speak()">🔊 ฟังเสียง</button><button class="gh" onclick="reveal()">👁️ เฉลย (กรรมการ)</button></div>
+    <div class="row"><button class="ok" onclick="judge(true)">✅ ถูก</button><button class="no" onclick="judge(false)">❌ ผิด</button></div>`;
+  if(G.phase==="attack")st=`<div class="big">✅ ตอบถูก! Combo ${p.combo||4}</div><div class="mu">${G.bonus?`โบนัส Combo +${G.bonus} ดาเมจ`:"STEP 3 — Attack"}</div><div class="row"><button onclick="attack()">⚔️ จั่ว Attack Card + 🎲</button></div><div class="mu" style="margin-top:8px">มี ⚡ Double Attack? กดที่การ์ดผู้เล่นเพื่อใช้แทน</div>`;
+  if(G.phase==="result")st=`${G.res}<div class="row"><button onclick="endTurn()">จบเทิร์น ▶ (STEP 4)</button></div>`;
+  if(G.phase==="over")st=`<div style="font-size:3rem">🏆</div><div class="big">${esc(G.p[G.win].name)} ชนะ!</div><div class="mu">${esc(G.why)}</div><div class="row"><button onclick="G={phase:'intro'};render()">เล่นอีกครั้ง</button></div>`;
+  A.innerHTML=`<div class="top"><h1>🎮 R-T-A</h1><div class="clock" id="gt"></div></div>
+  <div class="pls">${pl(0)}${pl(1)}</div><div class="stage">${st}</div>
+  <div class="log">${G.log.map(l=>`<div>• ${esc(l)}</div>`).join("")}</div>`;
+  clock();
+}
+render();
+</script>
+</body>
+</html>
